@@ -221,8 +221,17 @@ function renderLedger(){
  dd.textContent=(d>=0?'+':'−')+money(Math.abs(d)).replace('−','')+' per acre compared with farming alone';
  const u=cr().yU==='season'?'':' '+cr().yU.replace('/ac',''),pf=cr().pU==='$/ac'?money(Pr):'$'+num(Pr,2);
  $('formula').innerHTML=`${money(S.lease)} per MW × ${num(M.mwAc,4)} MW per acre = ${money(leaseAc)} lease<br>${money(leaseAc)} + ${num(f*100,1)}% farmed × (${num(Y,Y%1?1:0)}${u} × ${num(R*100)}% × ${pf} − ${money(C)} inputs) = ${money(dual)}<br>Farm only: ${num(Y,Y%1?1:0)}${u} × ${pf} − ${money(C)} inputs = ${money(farm)}`;
- const turb=S.acres/M.A;
- $('totals').textContent=`For ${num(S.acres)} acres: about ${num(turb,1)} turbines of ${S.mw} MW (${num(turb*S.mw,0)} MW). Lease income ${money(S.lease*turb*S.mw)} a year. ${money(farm*S.acres)} farming alone, ${money(dual*S.acres)} with wind and crop. The turbines make about ${num(M.mwh*S.acres/1000,1)} GWh a year.`;
+ const turb=S.acres/M.A,mwTot=turb*S.mw,small=turb<1,lo=Math.floor(turb),hi=Math.ceil(turb);
+ const count=small?'less than one turbine':(lo===hi?`room for ${lo} turbines`:`room for about ${num(turb,1)} turbines (plan on ${lo} or ${hi})`);
+ $('parcel').innerHTML=`<h3>Your ${num(S.acres)} acres, per year</h3>
+  <div class="kv"><span>Turbines</span><b>${small?'under 1':num(turb,1)}</b></div>
+  <div class="kv"><span>Turbine capacity</span><b>${num(mwTot,1)} MW</b></div>
+  <div class="kv"><span>Wind lease income</span><b>${money(S.lease*mwTot)}</b></div>
+  <div class="kv"><span>Farming alone</span><b>${money(farm*S.acres)}</b></div>
+  <div class="kv"><span>Wind lease plus crop</span><b>${money(dual*S.acres)}</b></div>
+  <div class="kv"><span>Electricity made</span><b>${num(M.mwh*S.acres/1000,1)} GWh</b></div>
+  <p class="small">At ${num(S.sx,1)} × ${num(S.sy,1)} rotor widths each ${S.mw} MW turbine needs about ${num(M.A)} acres, so this parcel has ${count}.</p>
+  ${small?`<p class="warn">This parcel is smaller than the ${num(M.A)} acres one turbine needs at this spacing. Whether a turbine can sit here depends on neighboring land, setbacks and the project layout, so treat these totals as rough.</p>`:''}`;
  $('leaseV').textContent=money(S.lease);$('acresV').textContent=num(S.acres);
  $('leaseAc').textContent=`At this spacing that is ${money(leaseAc)} per acre per year across the whole leased area.`;
 }
@@ -251,7 +260,7 @@ function syncSliders(){
 function render(){M=evaluate();syncSliders();renderMetrics();drawSection();drawPlan();tableView();renderLedger();}
 function runAuto(){
  const t0=performance.now(),r=search();S.sx=r.pick.sx;S.sy=r.pick.sy;S.mode='auto';render();
- $('genNote').textContent=(r.met?'':`No spacing reaches ${S.target}%, showing the closest. `)+`Tested ${r.tested.toLocaleString('en-US')} layouts in ${Math.round(performance.now()-t0)} ms.`;
+ $('genNote').textContent=(r.met?'':`No spacing reaches ${S.target}%, showing the closest. `)+`Tested ${r.tested.toLocaleString('en-US')} layouts.`;
 }
 function manual(){S.mode='manual';$('genNote').textContent='Custom layout. Press Generate to return to the best fit.';render();}
 $('target').addEventListener('input',e=>{S.target=+e.target.value;runAuto();});
