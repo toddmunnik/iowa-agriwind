@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Iowa Wind Dual-Revenue Estimator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">Iowa State Extension 2026 rents and budgets · Global Wind Atlas wind data</span>
+  <h1>Iowa Wind Dual-Revenue Estimator</h1>
+  <p>Pick a county, pick what you would grow around the turbines, and see what each acre earns from farming alone, a wind lease alone, and both together. The layout generator sets turbine spacing so the turbines do not rob each other of wind, and shows how much land stays in crops.</p>
+  <div class="flow" aria-label="Workflow"><span class="chip">County</span><span class="arrow">→</span><span class="chip">ISU rent, yield, costs</span><span class="arrow">+</span><span class="chip">Wind data</span><span class="arrow">→</span><span class="chip">Turbine spacing and layout</span><span class="arrow">→</span><span class="chip">Dual-revenue ledger</span></div>
+</header>
+
+<div class="layout">
+<main class="steps">
+
+<section class="step" id="s1">
+  <div class="step-head"><span class="step-n">STEP 1</span><h2>Choose your county</h2></div>
+  <p class="hint">Each tile is one county, grouped by the nine ISU crop-reporting districts and shaded by 2026 average cash rent. ISU reports Allamakee with Winneshiek, Decatur with Ringgold, and Mahaska with Wapello as single figures (marked †).</p>
+  <div class="districts" id="districts"></div>
+  <div class="legend"><span>$173</span><i></i><span>$332 per acre cash rent</span></div>
+  <div class="bench" id="bench"></div>
+</section>
+
+<section class="step" id="s2">
+  <div class="step-head"><span class="step-n">STEP 2</span><h2>Choose a farming system and crop</h2></div>
+  <div class="seg" id="systems"></div>
+  <div class="crops" id="crops" role="group" aria-label="Crop"></div>
+  <p class="hint" id="cropnote"></p>
+</section>
+
+<section class="step" id="s3">
+  <div class="step-head"><span class="step-n">STEP 3</span><h2>Generated array layout</h2></div>
+  <p class="hint">The generator tests turbine spacing and keeps the layout with the most turbines per acre that still delivers your chosen share of ideal wind output. Move any slider to try your own. Local zoning, setbacks and property lines are not modeled.</p>
+  <div class="ctrls">
+    <div class="ctrl"><label for="target">Keep at least this share of ideal wind output <b id="targetV"></b></label><input type="range" id="target" min="80" max="99" step="1"></div>
+    <div class="ctrl"><label for="mwSl">Turbine size <b id="mwV"></b></label><input type="range" id="mwSl" min="2" max="5" step="0.5"></div>
+    <div class="ctrl"><label for="sxSl">Spacing across the wind, in rotor widths <b id="sxV"></b></label><input type="range" id="sxSl" min="3" max="8" step="0.5"></div>
+    <div class="ctrl"><label for="sySl">Spacing along the wind, in rotor widths <b id="syV"></b></label><input type="range" id="sySl" min="5" max="12" step="0.5"></div>
+  </div>
+  <div class="row"><button class="btn" id="gen" type="button">Generate best layout</button><button class="btn ghost" id="useStd" type="button">Use common spacing (5 × 8)</button><span class="small" id="genNote"></span></div>
+  <div class="metrics" id="metrics"></div>
+  <div class="checks" id="checks"></div>
+  <div class="two">
+    <div class="viz"><h3>Side view: one turbine beside a tractor, to scale</h3><div id="xsec"></div></div>
+    <div class="viz"><h3>Layout seen from above, wind from the west</h3><canvas id="plan" width="640" height="400" aria-label="Plan view of a grid of nine turbines with spacing and the land each one takes"></canvas>
+      <p class="small" id="planNote"></p></div>
+  </div>
+  <details><summary>Table view of spacing trade-offs</summary><div class="tblwrap"><table id="ptable"></table></div></details>
+</section>
+
+<section class="step" id="s4">
+  <div class="step-head"><span class="step-n">STEP 4</span><h2>Inputs behind the numbers</h2></div>
+  <p class="hint">Every value is editable. The Source column says which figures come from Iowa State and which are placeholders for you to replace.</p>
+  <div class="tblwrap"><table id="assump"></table></div>
+</section>
+</main>
+
+<aside class="rail" aria-label="Per-acre results">
+  <div class="ledger">
+    <div><span class="eyebrow">Per acre, per year</span><h2 id="ledTitle" style="margin-top:4px"></h2></div>
+    <div class="led farm"><div class="t">Farm it as today</div><div class="n" id="nFarm"></div><div class="bar"><i id="bFarm"></i></div></div>
+    <div class="led wind"><div class="t">Wind lease only</div><div class="n" id="nWind"></div><div class="bar"><i id="bWind"></i></div><div class="small" id="leaseMult"></div></div>
+    <div class="led dual"><div class="t">Wind lease plus crop around the turbines</div><div class="n" id="nDual"></div><div class="bar"><i id="bDual"></i></div><div class="delta" id="dDual"></div></div>
+    <div class="ctrl"><label for="lease">Wind lease rate, $ per MW per year <b id="leaseV"></b></label><input type="range" id="lease" min="1000" max="12000" step="250"><div class="small" id="leaseAc"></div><div class="small">The starting value is the ISU CARD average of about $4,000 per MW per year, from a 2013 source. Compare it with current offers.</div></div>
+    <div class="ctrl"><label for="acres">Acres leased <b id="acresV"></b></label><input type="range" id="acres" min="40" max="2000" step="40"></div>
+    <div class="formula" id="formula"></div>
+    <div class="small" id="totals"></div>
+  </div>
+</aside>
+</div>
+
+<footer>
+  <p><b>Where the numbers come from.</b> Cash rents, yields and production costs: Iowa State University Extension and Outreach, Ag Decision Maker files C2-10 and A1-20, 2026. The $4,000 per MW starting lease: Iowa State University Center for Agricultural and Rural Development (CARD), Agricultural Policy Review. Wind: Global Wind Atlas 3.0, a free, web-based application developed, owned and operated by the Technical University of Denmark (DTU), released in partnership with the World Bank Group (ESMAP) using data provided by Vortex, licensed CC BY 4.0: <a href="https://globalwindatlas.info/" target="_blank" rel="noopener">globalwindatlas.info</a>. Land taken by turbines: NREL, Denholm et al., 2009, Land-Use Requirements of Modern Wind Power Plants in the United States. County center points: US Census Bureau 2026 Gazetteer.</p>
+  <p><b>How to read this.</b> Figures are returns per acre per year over variable costs, before land, machinery ownership and labor. The wind lease per acre is the lease per MW times the MW of turbines per acre at the chosen spacing. Land under turbine pads and roads is removed from farming, and the rest is farmed with the same formula as farm-only: crop yield × price, minus input costs. Wake losses use a simple spacing rule. This is a planning estimate, not a lease offer, an engineering study or financial advice. County zoning, setbacks, moratoriums and the property tax treatment of wind are not modeled.</p>
+  <div class="contacts">
+    <div><b>ISU Ag Decision Maker</b><br>agdm@iastate.edu · (515) 294-6685<br>Department of Economics and ISU Extension and Outreach<br><a href="https://www.extension.iastate.edu/agdm/wholefarm/html/c2-10.html" target="_blank" rel="noopener">Cash Rental Rates (C2-10)</a> · <a href="https://www.extension.iastate.edu/agdm/crops/html/a1-20.html" target="_blank" rel="noopener">Crop Production Costs (A1-20)</a></div>
+    <div><b>Center for Agricultural Law and Taxation</b><br>(515) 294-5217 · long-term lease and contract questions, including wind leases<br><a href="https://www.calt.iastate.edu/" target="_blank" rel="noopener">calt.iastate.edu</a></div>
+  </div>
+</footer>
+</div>
+<div id="tip"></div>
+
+<script src="app.js"></script>
+</body></html>
